@@ -90,6 +90,7 @@ struct businfo {
 	uint16_t iobase, iolimit;		/* I/O window */
 	uint32_t membase32, memlimit32;		/* mmio window below 4GB */
 	uint64_t membase64, memlimit64;		/* mmio window above 4GB */
+	uint64_t rombase, romlimit;		/* ROM BIOS mmio window */
 	struct slotinfo slotinfo[MAXSLOTS];
 };
 
@@ -488,7 +489,7 @@ modify_bar_registration(struct pci_devinst *pi, int idx, int registration)
 	/* 	mr.size = pi->pi_rom_bar.size; */
 	/* 	if (registration) { */
 	/* 		mr.flags = MEM_F_READ; */
-	/* 		mr.handler = pci_emul_mem_handler; */
+	/* 		mr.handler = pci_emul_rom_handler; */
 	/* 		mr.arg1 = pi; */
 	/* 		mr.arg2 = idx; */
 	/* 		error = register_mem(&mr); */
@@ -1270,6 +1271,7 @@ init_pci(struct vmctx *ctx)
 		bi->iobase = pci_emul_iobase;
 		bi->membase32 = pci_emul_membase32;
 		bi->membase64 = pci_emul_membase64;
+		bi->rombase = pci_emul_rombase;
 
 		for (slot = 0; slot < MAXSLOTS; slot++) {
 			si = &bi->slotinfo[slot];
@@ -1304,6 +1306,10 @@ init_pci(struct vmctx *ctx)
 		pci_emul_membase64 = roundup2(pci_emul_membase64,
 		    BUSMEM_ROUNDUP);
 		bi->memlimit64 = pci_emul_membase64;
+
+		pci_emul_rombase += BUSMEM_ROUNDUP;
+		pci_emul_rombase = roundup2(pci_emul_rombase, BUSMEM_ROUNDUP);
+		bi->romlimit = pci_emul_rombase;
 	}
 
 	/*

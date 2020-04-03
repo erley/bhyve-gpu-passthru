@@ -9,3 +9,6 @@ While non-bhyve sources are based on stable/12, bhyve itself is updated to CURRE
 <https://wiki.qemu.org/Documentation>
 <https://wiki.osdev.org/PCI>
 
+Some code was borrowed from Henrik Gulbrandsen who was working on expansion ROM support in July 2019.
+He posted his work up on <https://www.gulbra.net/freebsd-bhyve/>
+
