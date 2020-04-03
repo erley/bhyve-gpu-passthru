@@ -812,7 +812,7 @@ static vmexit_handler_t handler[VM_EXITCODE_MAX] = {
 	[VM_EXITCODE_SUSPENDED] = vmexit_suspend,
 	[VM_EXITCODE_TASK_SWITCH] = vmexit_task_switch,
 	[VM_EXITCODE_DEBUG] = vmexit_debug,
-	[VM_EXITCODE_BPT] = vmexit_breakpoint,
+/*	[VM_EXITCODE_BPT] = vmexit_breakpoint,*/
 };
 
 static void

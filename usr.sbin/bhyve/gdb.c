@@ -751,11 +751,11 @@ gdb_cpu_add(int vcpu)
 	pthread_mutex_lock(&gdb_lock);
 	assert(vcpu < guest_ncpus);
 	CPU_SET(vcpu, &vcpus_active);
-	if (!TAILQ_EMPTY(&breakpoints)) {
+/*	if (!TAILQ_EMPTY(&breakpoints)) {
 		vm_set_capability(ctx, vcpu, VM_CAP_BPT_EXIT, 1);
 		debug("$vCPU %d enabled breakpoint exits\n", vcpu);
 	}
-
+*/
 	/*
 	 * If a vcpu is added while vcpus are stopped, suspend the new
 	 * vcpu so that it will pop back out with a debug exit before
@@ -902,10 +902,10 @@ gdb_cpu_breakpoint(int vcpu, struct vm_exit *vmexit)
 	} else {
 		debug("$vCPU %d injecting breakpoint at rip %#lx\n", vcpu,
 		    vmexit->rip);
-		error = vm_set_register(ctx, vcpu,
+/*		error = vm_set_register(ctx, vcpu,
 		    VM_REG_GUEST_ENTRY_INST_LENGTH, vmexit->u.bpt.inst_length);
 		assert(error == 0);
-		error = vm_inject_exception(ctx, vcpu, IDT_BP, 0, 0, 0);
+	*/	error = vm_inject_exception(ctx, vcpu, IDT_BP, 0, 0, 0);
 		assert(error == 0);
 	}
 	pthread_mutex_unlock(&gdb_lock);
@@ -1188,10 +1188,10 @@ set_breakpoint_caps(bool enable)
 	while (!CPU_EMPTY(&mask)) {
 		vcpu = CPU_FFS(&mask) - 1;
 		CPU_CLR(vcpu, &mask);
-		if (vm_set_capability(ctx, vcpu, VM_CAP_BPT_EXIT,
+/*		if (vm_set_capability(ctx, vcpu, VM_CAP_BPT_EXIT,
 		    enable ? 1 : 0) < 0)
 			return (false);
-		debug("$vCPU %d %sabled breakpoint exits\n", vcpu,
+	*/	debug("$vCPU %d %sabled breakpoint exits\n", vcpu,
 		    enable ? "en" : "dis");
 	}
 	return (true);
