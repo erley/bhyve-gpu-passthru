@@ -556,12 +556,8 @@ printf("DEBUG: ROM for %d/%d/%d enabled=%d, size=%lx\n",
 	if (error)
 		return (-1);
 
-	/* HACK: */
-	if (pi->pi_rom_enabled)
-	{
-		reg_rom = (pi->pi_rom_bar.addr & PCIM_BIOS_ADDR_MASK) | is_enabled;
-		write_config(&sc->psc_sel, PCIR_BIOS, 4, reg_rom);
-	}
+	reg_rom = pci_get_cfgdata32(pi, PCIR_BIOS);
+	write_config(&sc->psc_sel, PCIR_BIOS, 4, reg_rom);
 
 	return (0);
 }

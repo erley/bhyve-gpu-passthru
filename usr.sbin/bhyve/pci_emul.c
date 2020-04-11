@@ -170,7 +170,6 @@ CFGREAD(struct pci_devinst *pi, int coff, int bytes)
 static void
 pci_parse_slot_usage(char *aopt)
 {
-
 	EPRINTLN("Invalid PCI slot info field \"%s\"", aopt);
 }
 
@@ -354,7 +353,6 @@ pci_emul_msix_tread(struct pci_devinst *pi, uint64_t offset, int size)
 int
 pci_msix_table_bar(struct pci_devinst *pi)
 {
-
 	if (pi->pi_msix.table != NULL)
 		return (pi->pi_msix.table_bar);
 	else
@@ -364,7 +362,6 @@ pci_msix_table_bar(struct pci_devinst *pi)
 int
 pci_msix_pba_bar(struct pci_devinst *pi)
 {
-
 	if (pi->pi_msix.table != NULL)
 		return (pi->pi_msix.pba_bar);
 	else
@@ -396,6 +393,28 @@ pci_emul_io_handler(struct vmctx *ctx, int vcpu, int in, int port, int bytes,
 	}
 	return (-1);
 }
+
+/* static int */
+/* pci_emul_rom_handler(struct vmctx *ctx, int vcpu, int dir, uint64_t addr, */
+/* 					 int size, uint64_t *val, void *arg1, long arg2) */
+/* { */
+/* 	struct pci_devinst *pdi = arg1; */
+/* 	struct pci_devemu *pe = pdi->pi_d; */
+/* 	uint64_t offset; */
+/* 	int bidx = (int) arg2; */
+
+/* 	assert(dir == MEM_F_READ); */
+
+/* 	offset = addr - pdi->pi_rom_bar.addr; */
+/* 	if (size == 8) { */
+/* 		*val = (*pe->pe_barread)(ctx, vcpu, pdi, bidx, offset, 4); */
+/* 		*val |= (*pe->pe_barread)(ctx, vcpu, pdi, bidx, offset + 4, 4) << 32; */
+/* 	} else { */
+/* 		*val = (*pe->pe_barread)(ctx, vcpu, pdi, bidx, offset, size); */
+/* 	} */
+
+/* 	return (0); */
+/* } */
 
 static int
 pci_emul_mem_handler(struct vmctx *ctx, int vcpu, int dir, uint64_t addr,
@@ -465,7 +484,6 @@ int
 pci_emul_alloc_bar(struct pci_devinst *pdi, int idx, enum pcibar_type type,
 		   uint64_t size)
 {
-
 	return (pci_emul_alloc_pbar(pdi, idx, 0, type, size));
 }
 
@@ -476,13 +494,13 @@ pci_emul_alloc_bar(struct pci_devinst *pdi, int idx, enum pcibar_type type,
 static void
 modify_bar_registration(struct pci_devinst *pi, int idx, int registration)
 {
-	int error;
+	int error = 0;
 	struct inout_port iop;
 	struct mem_range mr;
 
-	/* {{{ */
+	/* {{{ PCIBAR_ROM: */
 	/* if (idx < 0) */
-	/* {	/\* PCIBAR_ROM: *\/ */
+	/* { */
 	/* 	bzero(&mr, sizeof(struct mem_range)); */
 	/* 	mr.name = pi->pi_name; */
 	/* 	mr.base = pi->pi_rom_bar.addr; */
@@ -496,7 +514,7 @@ modify_bar_registration(struct pci_devinst *pi, int idx, int registration)
 	/* 	} else */
 	/* 		error = unregister_mem(&mr); */
 	/* } else */
-		/* }}} */
+	/* }}} */
 	switch (pi->pi_bar[idx].type) {
 	case PCIBAR_IO:
 		bzero(&iop, sizeof(struct inout_port));
@@ -536,14 +554,12 @@ modify_bar_registration(struct pci_devinst *pi, int idx, int registration)
 static void
 unregister_bar(struct pci_devinst *pi, int idx)
 {
-
 	modify_bar_registration(pi, idx, 0);
 }
 
 static void
 register_bar(struct pci_devinst *pi, int idx)
 {
-
 	modify_bar_registration(pi, idx, 1);
 }
 
@@ -609,32 +625,6 @@ update_bar_address(struct pci_devinst *pi, uint64_t addr, int idx, int type)
 		register_bar(pi, idx);
 }
 /* {{{ */
-/* int */
-/* pci_emul_alloc_rom(struct pci_devinst *pdi, int segid, uint32_t addr, uint32_t size) */
-/* { */
-/* 	/\* The segment ID must be valid *\/ */
-/* 	if (segid <= VM_SYSMEM || segid >= VM_NOTHING) */
-/* 		return (-1); */
-
-/* 	/\* The size must be a power of two >= 4 KiB *\/ */
-/* 	if ((size & (size - 1)) != 0 || size < 4096) */
-/* 		return (-2); */
-
-/* 	/\* The address must be at a multiple of size *\/ */
-/* 	if ((addr & (size - 1)) != 0) */
-/* 		return (-3); */
-
-/* 	pdi->pi_rom_segment  = segid; */
-/* 	pdi->pi_rom_bar.type = PCIBAR_ROM; */
-/* 	pdi->pi_rom_bar.addr = addr; */
-/* 	pdi->pi_rom_bar.size = size; */
-/* 	pdi->pi_rom_enabled  = 0; */
-
-/* 	pci_set_cfgdata32(pdi, PCIR_BIOS, addr); */
-
-/* 	return (0); */
-/* } */
-
 static int
 update_rom_address(struct pci_devinst *pdi)
 {
@@ -708,14 +698,14 @@ pci_emul_alloc_rombar(struct pci_devinst *pdi, uint32_t size, int enabled)
 	pdi->pi_rom_bar.type = PCIBAR_ROM;
 	pdi->pi_rom_bar.addr = addr;
 	pdi->pi_rom_bar.size = size;
-	pdi->pi_rom_enabled = enabled && memen(pdi);
+	pdi->pi_rom_enabled = 1; /* enabled && memen(pdi);*/
 
 	/* TODO: is that segment OK ? */
-	/* VM_SYSMEM < ? < VM_NOTHING */
-	pdi->pi_rom_segment = VM_BOOTROM; /* VM_BOOTROM, VM_FRAMEBUFFER, VM_VIDEOBIOS */
+	/* VM_SYSMEM < [VM_BOOTROM, VM_FRAMEBUFFER, VM_VIDEOBIOS] < VM_NOTHING */
+	pdi->pi_rom_segment = VM_BOOTROM;
 
 	/* Initialize ROM BAR register in config space */
-	rom_bar = (addr & PCIM_BIOS_ADDR_MASK) | (enabled & PCIM_BIOS_ENABLE);
+	rom_bar = (addr & PCIM_BIOS_ADDR_MASK) | PCIM_BIOS_ENABLE;
 	pci_set_cfgdata32(pdi, PCIR_BIOS, rom_bar);
 
 	cmd = pci_get_cfgdata16(pdi, PCIR_COMMAND);
@@ -724,13 +714,14 @@ pci_emul_alloc_rombar(struct pci_devinst *pdi, uint32_t size, int enabled)
 
 	if (pdi->pi_rom_enabled) {
 		/* Map the physical BAR in the guest MMIO space */
-		error = vm_mmap_memseg(pdi->pi_vmctx, pdi->pi_rom_bar.addr,
-		    pdi->pi_rom_segment, 0, pdi->pi_rom_bar.size,
-		    PROT_READ | PROT_EXEC);
-		if (error)
-			return (-1);
+		/* TODO: this fails... */
+		/* error = vm_mmap_memseg(pdi->pi_vmctx, pdi->pi_rom_bar.addr, */
+		/*     pdi->pi_rom_segment, 0, pdi->pi_rom_bar.size, */
+		/*     PROT_READ | PROT_EXEC); */
+		/* if (error) */
+		/* 	return (-1); */
 	}
-/*	register_bar(pdi, -1);*/
+	/* register_bar(pdi, -1); */
 
 	return (0);
 }
@@ -790,7 +781,7 @@ printf("DEBUG: pci_emul_alloc_pbar() BAR[%d] size=%lx for bus/slot/func %d/%d/%d
 			limit = PCI_EMUL_MEMLIMIT64; /* TODO: calculate it! */
 			mask = PCIM_BAR_MEM_BASE;
 			lobits = PCIM_BAR_MEM_SPACE | PCIM_BAR_MEM_64 |
-				PCIM_BAR_MEM_PREFETCH;/* TODO: ?how it knows it? */
+				PCIM_BAR_MEM_PREFETCH;
 		} else {
 			baseptr = &pci_emul_membase32;
 			limit = PCI_EMUL_MEMLIMIT32;
@@ -959,7 +950,6 @@ static void
 pci_populate_msixcap(struct msixcap *msixcap, int msgnum, int barnum,
 		     uint32_t msix_tab_size)
 {
-
 	assert(msix_tab_size % 4096 == 0);
 
 	bzero(msixcap, sizeof(struct msixcap));
@@ -1097,7 +1087,6 @@ void
 pciecap_cfgwrite(struct pci_devinst *pi, int capoff, int offset,
 		 int bytes, uint32_t val)
 {
-
 	/* XXX don't write to the readonly parts */
 	CFGWRITE(pi, offset, val, bytes);
 }
@@ -1237,7 +1226,6 @@ pci_emul_ecfg_handler(struct vmctx *ctx, int vcpu, int dir, uint64_t addr,
 uint64_t
 pci_ecfg_base(void)
 {
-
 	return (PCI_EMUL_ECFG_BASE);
 }
 
@@ -1367,7 +1355,7 @@ init_pci(struct vmctx *ctx)
 	error = register_mem(&mr);
 	assert(error == 0);
 
-	/* TODO: ROM/firmware space */
+	/* TODO: ROM/firmware space. Hmm, it is already done 15 lines before... */
 	/* bzero(&mr, sizeof(struct mem_range)); */
 	/* mr.name = "ROM space"; */
 	/* mr.flags = MEM_F_READ | MEM_F_IMMUTABLE; */
@@ -1384,7 +1372,6 @@ static void
 pci_apic_prt_entry(int bus, int slot, int pin, int pirq_pin, int ioapic_irq,
     void *arg)
 {
-
 	dsdt_line("  Package ()");
 	dsdt_line("  {");
 	dsdt_line("    0x%X,", slot << 16 | 0xffff);
@@ -1610,7 +1597,6 @@ pci_msi_maxmsgnum(struct pci_devinst *pi)
 int
 pci_msix_enabled(struct pci_devinst *pi)
 {
-
 	return (pi->pi_msix.enabled && !pi->pi_msi.enabled);
 }
 
@@ -1638,7 +1624,6 @@ pci_generate_msix(struct pci_devinst *pi, int index)
 void
 pci_generate_msi(struct pci_devinst *pi, int index)
 {
-
 	if (pci_msi_enabled(pi) && index < pci_msi_maxmsgnum(pi)) {
 		vm_lapic_msi(pi->pi_vmctx, pi->pi_msi.addr,
 			     pi->pi_msi.msg_data + index);
@@ -1721,7 +1706,6 @@ pci_lintr_route(struct pci_devinst *pi)
 void
 pci_lintr_assert(struct pci_devinst *pi)
 {
-
 	assert(pi->pi_lintr.pin > 0);
 
 	pthread_mutex_lock(&pi->pi_lintr.lock);
@@ -1738,7 +1722,6 @@ pci_lintr_assert(struct pci_devinst *pi)
 void
 pci_lintr_deassert(struct pci_devinst *pi)
 {
-
 	assert(pi->pi_lintr.pin > 0);
 
 	pthread_mutex_lock(&pi->pi_lintr.lock);
@@ -1753,7 +1736,6 @@ pci_lintr_deassert(struct pci_devinst *pi)
 static void
 pci_lintr_update(struct pci_devinst *pi)
 {
-
 	pthread_mutex_lock(&pi->pi_lintr.lock);
 	if (pi->pi_lintr.state == ASSERTED && !pci_lintr_permitted(pi)) {
 		pci_irq_deassert(pi);
@@ -2071,7 +2053,7 @@ pci_cfgrw(struct vmctx *ctx, int vcpu, int in, int bus, int slot, int func,
 			}
 			pci_set_cfgdata32(pi, coff, bar);
 
-		/*{{{
+		/* {{{
 		 * The BAR register for an Expansion ROM is slightly different.
 		 */
 		} else if (coff >= PCIR_BIOS && coff < PCIR_BIOS + 4) {
